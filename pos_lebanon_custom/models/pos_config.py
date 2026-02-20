@@ -18,7 +18,17 @@ class PosConfig(models.Model):
     )
 
     @api.model
-    def _load_pos_data_fields(self, config):
-        result = super()._load_pos_data_fields(config)
-        result += ['lbp_usd_rate', 'display_lbp_total']
-        return result
+    def _load_pos_data_fields(self, config_id):
+        params = super()._load_pos_data_fields(config_id)
+        # If parameters are empty, it means we hit the default mixin implementation
+        # which returns an empty list. This causes standard POS fields to be missing.
+        # We must populate it with all fields to ensure the POS loads correctly.
+        if not params:
+            params = list(self.fields_get().keys())
+        
+        # Add our custom fields if they aren't already included
+        for field in ['lbp_usd_rate', 'display_lbp_total']:
+            if field not in params:
+                params.append(field)
+        
+        return params
