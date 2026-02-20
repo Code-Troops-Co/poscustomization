@@ -71,12 +71,12 @@
             </span>
         </xpath>
 
-        <!-- LBP Total -->
+        <!-- LBP Total: Changed from div (stacked) to span (inline pipe) to match taxes -->
         <xpath expr="//span[hasclass('total')]" position="after">
-            <div t-if="order.config_id.display_lbp_total"
-                 class="lbp-total-display text-muted" style="font-size: 0.85rem;">
-                <t t-esc="this.formatLbpAmount(order.priceIncl)"/> LBP
-            </div>
+            <span t-if="order.config_id.display_lbp_total"
+                 class="lbp-total-display text-muted ms-1" style="font-size: 0.85rem;">
+                | <t t-esc="this.formatLbpAmount(order.priceIncl)"/> LBP
+            </span>
         </xpath>
     </t>
 
@@ -101,11 +101,13 @@
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ProductCard" t-inherit="point_of_sale.ProductCard" t-inherit-mode="extension">
 
-        <xpath expr="//div[hasclass('product-name')]" position="after">
-            <div class="lbp-product-price w-100 lh-sm mt-auto">
-                <span class="fw-semibold lbp-usd-price" t-esc="this.formattedUsdPrice"/>
-                <span t-if="this.showLbpPrice"
-                      class="d-block text-muted lbp-lbp-price"
+        <xpath expr="//div[hasclass('product-name')]" position="replace">
+             <div class="product-name" t-esc="props.product.display_name" />
+             <div class="lbp-product-price w-100 lh-sm mt-1">
+                <div class="fw-semibold lbp-usd-price" t-esc="this.formattedUsdPrice"/>
+                <div t-if="this.showLbpPrice"
+                      class="text-muted lbp-lbp-price"
+                      style="font-size: 0.9em;"
                       t-esc="this.formattedLbpPrice"/>
             </div>
         </xpath>

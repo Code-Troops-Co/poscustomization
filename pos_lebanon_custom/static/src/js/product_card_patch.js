@@ -44,7 +44,8 @@ patch(ProductCard.prototype, {
         }
         try {
             const pos = this.env.services.pos;
-            const pricelist = pos?.config?.pricelist_id;
+            // FIX: Use the default_pricelist object, not the config ID
+            const pricelist = pos.default_pricelist;
             const price = product.getPrice(pricelist, 1, 0, false, product);
             const currencyId = pos?.currency?.id || pos?.config?.currency_id?.id;
             if (currencyId) {
@@ -66,7 +67,8 @@ patch(ProductCard.prototype, {
         }
         try {
             const pos = this.env.services.pos;
-            const pricelist = pos?.config?.pricelist_id;
+            // FIX: Use the default_pricelist object, not the config ID
+            const pricelist = pos.default_pricelist;
             const price = product.getPrice(pricelist, 1, 0, false, product);
             const rate = pos?.config?.lbp_usd_rate || 89500;
             return _toLbp(price, rate) + " LBP";
