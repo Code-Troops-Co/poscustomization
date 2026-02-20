@@ -1,0 +1,100 @@
+/* ============================================================ */
+/* POS Lebanon Customization — Layout & Dual Currency Styles    */
+/* ============================================================ */
+
+/* ---- Product Screen: 3-Column Layout ---- */
+.product-screen {
+    position: relative;
+}
+
+/* Right sidebar */
+.lbp-right-sidebar {
+    width: 200px;
+    min-width: 180px;
+    max-width: 220px;
+    background: var(--o-view-bg, #f8f9fa);
+    z-index: 1;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.lbp-cat-btn {
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.lbp-cat-btn:hover {
+    background-color: var(--o-action-bg, #e9ecef);
+    border-color: var(--o-brand-primary, #714B67);
+}
+
+.lbp-cat-btn.active,
+.lbp-cat-btn.btn-primary {
+    background-color: var(--o-brand-primary, #714B67);
+    border-color: var(--o-brand-primary, #714B67);
+    color: #fff;
+}
+
+.lbp-util-btn {
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+}
+
+/* ---- Footer: Exchange Rate Bar ---- */
+.lbp-footer-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--o-view-bg, #f8f9fa);
+    border-top: 1px solid var(--o-border-color, #dee2e6);
+    z-index: 2;
+    min-height: 44px;
+}
+
+/* ---- Product Card Dual Price ---- */
+.lbp-product-price {
+    padding: 2px 6px;
+    text-align: center;
+}
+
+.lbp-usd-price {
+    font-size: 0.8rem;
+    color: var(--o-brand-primary, #714B67);
+}
+
+.lbp-lbp-price {
+    font-size: 0.7rem;
+    color: var(--o-text-muted, #6c757d);
+}
+
+/* ---- Orderline LBP ---- */
+.lbp-line-price {
+    text-align: right;
+    padding-right: 4px;
+    color: var(--o-text-muted, #6c757d);
+}
+
+/* ---- OrderDisplay LBP ---- */
+.lbp-tax-amount,
+.lbp-total-display {
+    color: var(--o-text-muted, #6c757d);
+}
+
+.lbp-total-display {
+    font-weight: 600;
+}
+
+/* ---- Responsive: hide sidebar on small screens ---- */
+@media (max-width: 768px) {
+    .lbp-right-sidebar,
+    .lbp-footer-bar {
+        display: none !important;
+    }
+}
+
+/* ---- Ensure product screen has bottom padding for footer ---- */
+.product-screen {
+    padding-bottom: 48px;
+}

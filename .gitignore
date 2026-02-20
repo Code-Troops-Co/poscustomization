@@ -1,0 +1,16 @@
+# Odoo Source Code (Do not push)
+odoo/
+enterprise/
+
+# Python Artifacts
+*.pyc
+__pycache__/
+*.pyo
+
+# Editor Settings
+.vscode/
+.idea/
+
+# System Files
+Thumbs.db
+Desktop.ini
