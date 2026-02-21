@@ -3,6 +3,7 @@
 import { PaymentScreen } from "@point_of_sale/app/screens/payment_screen/payment_screen";
 import { PaymentScreenStatus } from "@point_of_sale/app/screens/payment_screen/payment_status/payment_status";
 import { patch } from "@web/core/utils/patch";
+import { useState } from "@odoo/owl";
 
 /**
  * Helper: format an amount as LBP with thousands separators.
@@ -12,10 +13,17 @@ function _toLbp(amount, rate) {
 }
 
 /**
- * Extend PaymentScreen to show LBP equivalent of the total due
- * and provide Enter LBP amount functionality.
+ * Extend PaymentScreen to show LBP equivalents and support
+ * "Enter in LBP" mode that converts LBP input to USD.
  */
 patch(PaymentScreen.prototype, {
+    setup() {
+        super.setup(...arguments);
+        this.lbpPayState = useState({
+            enterInLbp: false,
+        });
+    },
+
     get lbpTotalDue() {
         try {
             const rate = this.pos.config.lbp_usd_rate || 89500;
@@ -58,6 +66,36 @@ patch(PaymentScreen.prototype, {
     formatLbpAmount(usdAmount) {
         const rate = this.pos.config.lbp_usd_rate || 89500;
         return _toLbp(usdAmount, rate);
+    },
+
+    /**
+     * Toggle "Enter in LBP" mode. When active, amounts typed
+     * in the numpad are treated as LBP and converted to USD.
+     */
+    toggleLbpEntry() {
+        this.lbpPayState.enterInLbp = !this.lbpPayState.enterInLbp;
+    },
+
+    /**
+     * Override updateSelectedPaymentline to convert LBP→USD
+     * when Enter in LBP mode is active.
+     */
+    updateSelectedPaymentline(amount = false) {
+        if (this.lbpPayState.enterInLbp && amount) {
+            const rate = this.pos.config.lbp_usd_rate || 89500;
+            // Convert LBP amount to USD
+            const usdAmount = parseFloat(amount) / rate;
+            // Round to 2 decimal places
+            amount = Math.round(usdAmount * 100) / 100;
+        }
+        return super.updateSelectedPaymentline(amount);
+    },
+
+    /**
+     * Check if a payment method is the LBP cash method.
+     */
+    isLbpPaymentMethod(pm) {
+        return pm.name && pm.name.toLowerCase().includes("lbp");
     },
 });
 

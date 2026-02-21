@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Cash (LBP) Payment Method -->
+    <record id="pos_payment_method_cash_lbp" model="pos.payment.method">
+        <field name="name">Cash (LBP)</field>
+        <field name="is_cash_count">True</field>
+    </record>
+</odoo>
