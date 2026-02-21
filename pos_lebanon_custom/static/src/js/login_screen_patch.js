@@ -36,25 +36,31 @@ patch(LoginScreen.prototype, {
 
         this.loginState.isLoading = true;
         try {
-            // Call custom HTTP controller endpoint (not orm.call)
+            console.log("POS Login: calling /pos/authenticate_user for user:", username);
+
+            // Call custom HTTP controller endpoint
             const result = await rpc("/pos/authenticate_user", {
                 config_id: this.pos.config.id,
                 username: username,
                 password: password,
             });
 
+            console.log("POS Login: server response:", JSON.stringify(result));
+
             if (result && result.success) {
-                // Find the matching cashier in loaded employees/users
+                // setCashier expects a res.users record from POS models.
+                // Look up the authenticated user in the loaded POS data.
                 let cashier = null;
-                const employees = this.pos.models["hr.employee"]?.getAll?.() || [];
-                if (result.employee_id) {
-                    cashier = employees.find(e => e.id === result.employee_id);
+
+                if (result.user_id) {
+                    // Try to find the user in loaded res.users records
+                    cashier = this.pos.models["res.users"]?.get?.(result.user_id);
+                    console.log("POS Login: found res.users record:", !!cashier);
                 }
-                if (!cashier && result.user_id) {
-                    cashier = employees.find(e => e.user_id?.id === result.user_id);
-                }
-                // Fallback to current user
+
+                // Fallback: use the currently logged-in POS user
                 if (!cashier) {
+                    console.log("POS Login: using fallback this.pos.user");
                     cashier = this.pos.user;
                 }
 
@@ -67,6 +73,7 @@ patch(LoginScreen.prototype, {
             }
         } catch (e) {
             console.error("POS Login error:", e);
+            console.error("POS Login error details:", e.message, e.data);
             this.notification.add(
                 _t("Authentication service error. Please try again."),
                 { type: "danger" }
