@@ -2,13 +2,14 @@
 <templates id="template" xml:space="preserve">
 
     <!-- ============================================================ -->
-    <!-- 1. ProductScreen: Restructure layout to 3-column + footer    -->
-    <!--    Left: OrderSummary + Numpad + Payment (untouched)          -->
-    <!--    Center: Product Grid (remove CategorySelector from here)  -->
-    <!--    Right: Vertical Category Sidebar + Utility Buttons        -->
-    <!--    Bottom: Exchange Rate Footer Bar                           -->
+    <!-- 1. ProductScreen: 3-column layout + footer + always-on numpad -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ProductScreen" t-inherit="point_of_sale.ProductScreen" t-inherit-mode="extension">
+
+        <!-- C2: Remove numpad t-if condition to make it always visible -->
+        <xpath expr="//Numpad[hasclass('d-grid')]" position="attributes">
+            <attribute name="t-if"></attribute>
+        </xpath>
 
         <!-- Remove the original CategorySelector from the rightpane (center area) -->
         <xpath expr="//CategorySelector" position="replace"/>
@@ -29,6 +30,7 @@
                                     'btn-light': !(pos.selectedCategory and pos.selectedCategory.id === categ.id)
                                 }"
                                 t-on-click="() => this.pos.setSelectedCategory(categ.id)">
+                            <span t-if="categ.parent_id" class="ms-3"/>
                             <span t-esc="categ.name" class="fs-6"/>
                         </button>
                     </t>
@@ -49,8 +51,8 @@
                     Active Exchange Rate: <strong t-esc="this.formattedLbpRate()"/> LBP/$
                 </span>
                 <span class="fs-5 fw-bold" t-if="currentOrder">
-                    Total Paid/Remaining:
-                    <t t-esc="total"/>
+                    Total:
+                    <t t-esc="this.env.utils.formatCurrency(currentOrder.priceIncl)"/>
                     | <t t-esc="this.lbpTotal"/> LBP
                 </span>
             </div>
@@ -71,7 +73,7 @@
             </span>
         </xpath>
 
-        <!-- LBP Total: Changed from div (stacked) to span (inline pipe) to match taxes -->
+        <!-- LBP Total -->
         <xpath expr="//span[hasclass('total')]" position="after">
             <span t-if="order.config_id.display_lbp_total"
                  class="lbp-total-display text-muted ms-1" style="font-size: 0.85rem;">
@@ -101,14 +103,160 @@
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ProductCard" t-inherit="point_of_sale.ProductCard" t-inherit-mode="extension">
 
-        <xpath expr="//div[hasclass('product-name')]" position="replace">
-             <div class="product-name" t-esc="props.product.display_name" />
+        <xpath expr="//div[hasclass('product-name')]" position="after">
              <div class="lbp-product-price w-100 lh-sm mt-1">
                 <div class="fw-semibold lbp-usd-price" t-esc="this.formattedUsdPrice"/>
                 <div t-if="this.showLbpPrice"
                       class="text-muted lbp-lbp-price"
                       style="font-size: 0.9em;"
                       t-esc="this.formattedLbpPrice"/>
+            </div>
+        </xpath>
+    </t>
+
+
+    <!-- ============================================================ -->
+    <!-- 5. PaymentScreen — LBP total due                             -->
+    <!-- ============================================================ -->
+    <t t-name="pos_lebanon_custom.PaymentScreenDue" t-inherit="point_of_sale.PaymentScreenDue" t-inherit-mode="extension">
+
+        <xpath expr="//div[hasclass('total')]" position="inside">
+            <div t-if="this.showLbp"
+                 class="lbp-payment-due text-muted text-center"
+                 style="font-size: 0.35em; font-weight: 500;">
+                <t t-esc="this.lbpTotalDue"/> LBP
+            </div>
+        </xpath>
+    </t>
+
+
+    <!-- ============================================================ -->
+    <!-- 6. PaymentScreenStatus — LBP remaining / change              -->
+    <!-- ============================================================ -->
+    <t t-name="pos_lebanon_custom.PaymentScreenStatus" t-inherit="point_of_sale.PaymentScreenStatus" t-inherit-mode="extension">
+
+        <xpath expr="//span[hasclass('amount')]" position="after">
+            <div t-if="this.showLbp"
+                 class="lbp-status-amount text-muted"
+                 style="font-size: 0.6em; font-weight: 500;">
+                <t t-esc="this.formatLbpAmount(parseFloat(amountText) || 0)"/> LBP
+            </div>
+        </xpath>
+    </t>
+
+
+    <!-- ============================================================ -->
+    <!-- 7. OrderReceipt — LBP on total, change, payment lines        -->
+    <!-- ============================================================ -->
+    <t t-name="pos_lebanon_custom.OrderReceipt" t-inherit="point_of_sale.OrderReceipt" t-inherit-mode="extension">
+
+        <!-- LBP after receipt Total -->
+        <xpath expr="//div[hasclass('receipt-total')]" position="after">
+            <div t-if="this.showLbp"
+                 class="text-muted text-end" style="font-size: 0.85em;">
+                <t t-esc="this.formatLbpAmount(order.priceIncl)"/> LBP
+            </div>
+        </xpath>
+
+        <!-- LBP after Change -->
+        <xpath expr="//div[hasclass('receipt-change')]" position="after">
+            <div t-if="this.showLbp and order.showChange"
+                 class="text-muted text-end" style="font-size: 0.85em;">
+                Change: <t t-esc="this.formatLbpAmount(order.change)"/> LBP
+            </div>
+        </xpath>
+
+        <!-- LBP exchange rate at bottom of receipt, before footer -->
+        <xpath expr="//div[hasclass('before-footer')]" position="before">
+            <div t-if="this.showLbp"
+                 class="lbp-receipt-rate text-center text-muted pt-2 border-top mt-2"
+                 style="font-size: 0.8em;">
+                Rate: 1 USD = <t t-esc="this.formatLbpAmount(1)"/> LBP
+            </div>
+        </xpath>
+    </t>
+
+
+    <!-- ============================================================ -->
+    <!-- 8. ReceiptScreen — LBP in banner + WhatsApp                  -->
+    <!-- ============================================================ -->
+    <t t-name="pos_lebanon_custom.ReceiptScreen" t-inherit="point_of_sale.ReceiptScreen" t-inherit-mode="extension">
+
+        <!-- LBP amount in the "Payment Successful" banner -->
+        <xpath expr="//span[hasclass('edit-order-payment')]" position="before">
+            <span t-if="this.showLbp"
+                  class="text-success-emphasis" style="font-size: 0.8em;">
+                | <t t-esc="this.lbpOrderAmount"/> LBP
+            </span>
+        </xpath>
+
+        <!-- WhatsApp phone input + send button after email input -->
+        <xpath expr="//input[hasclass('send-receipt-email-input')]/.." position="after">
+            <div class="d-flex mt-2">
+                <input type="tel"
+                       class="send-receipt-whatsapp-input o_input position-relative p-3 border border-end-0 rounded-start-2 text-body"
+                       placeholder="e.g. +961 71 123 456"
+                       t-model="this.lbpState.whatsappPhone"/>
+                <div>
+                    <button t-att-style="`width: ${this.ui.isSmall ? '4rem' : '8rem'}`"
+                            class="btn btn-success btn-lg lh-lg rounded-start-0 h-100"
+                            t-att-disabled="!this.isValidWhatsApp"
+                            t-on-click="() => this.sendViaWhatsApp()">
+                        <i class="fa fa-whatsapp"/>
+                    </button>
+                </div>
+            </div>
+        </xpath>
+    </t>
+
+
+    <!-- ============================================================ -->
+    <!-- 9. ClosePosPopup — LBP on closing register amounts           -->
+    <!-- ============================================================ -->
+    <t t-name="pos_lebanon_custom.ClosePosPopup" t-inherit="point_of_sale.ClosePosPopup" t-inherit-mode="extension">
+
+        <!-- LBP after the closing summary header totals -->
+        <xpath expr="//div[hasclass('closing-header')]" position="after">
+            <div t-if="this.showLbp"
+                 class="text-muted text-center px-3 pb-2" style="font-size: 0.85em;">
+                Exchange Rate: 1 USD = <t t-esc="this.formatLbpAmount(1)"/> LBP
+            </div>
+        </xpath>
+    </t>
+
+
+    <!-- ============================================================ -->
+    <!-- 10. LoginScreen — Username/Password override                 -->
+    <!-- ============================================================ -->
+    <t t-name="pos_lebanon_custom.LoginScreen" t-inherit="point_of_sale.LoginScreen" t-inherit-mode="extension">
+
+        <!-- Replace the "Open Register" button with a login form -->
+        <xpath expr="//div[hasclass('login-body')]" position="replace">
+            <div class="login-body d-flex flex-column gap-3 m-auto login-form" style="max-width: 400px; width: 100%;">
+                <div class="text-center mb-3">
+                    <i class="fa fa-lock fa-3x text-white mb-2"/>
+                    <h3 class="text-white">POS Login</h3>
+                </div>
+                <input type="text"
+                       class="form-control form-control-lg rounded-3 p-3"
+                       placeholder="Username"
+                       t-model="this.loginState.username"
+                       t-on-keydown="(ev) => this.onUsernameKeydown(ev)"
+                       t-att-disabled="this.loginState.isLoading"/>
+                <input type="password"
+                       class="form-control form-control-lg rounded-3 p-3"
+                       placeholder="Password"
+                       t-model="this.loginState.password"
+                       t-on-keydown="(ev) => this.onPasswordKeydown(ev)"
+                       t-att-disabled="this.loginState.isLoading"/>
+                <button class="btn btn-light btn-lg py-3 rounded-3 fw-bold"
+                        t-on-click="() => this.openRegister()"
+                        t-att-disabled="this.loginState.isLoading">
+                    <i t-if="this.loginState.isLoading" class="fa fa-spin fa-circle-o-notch me-2"/>
+                    <i t-else="" class="fa fa-sign-in me-2"/>
+                    <span t-if="this.loginState.isLoading">Logging in...</span>
+                    <span t-else="">Open Register</span>
+                </button>
             </div>
         </xpath>
     </t>

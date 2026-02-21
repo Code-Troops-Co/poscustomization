@@ -1,12 +1,16 @@
 {
     'name': 'POS Lebanon Customization',
-    'version': '19.0.1.0.0',
+    'version': '19.0.2.0.0',
     'category': 'Sales/Point of Sale',
     'summary': 'Custom POS layout and multi-currency support for Lebanon (USD/LBP)',
     'description': """
         This module provides:
-        - Right sidebar with vertical category list and utility buttons
-        - Dual currency display (USD and LBP) on product cards, order lines, and totals
+        - Dual currency display (USD and LBP) on all POS screens
+        - Payment Screen, Receipt, and Closing Register multi-currency
+        - WhatsApp receipt sharing
+        - Always-visible keypad
+        - Full category sidebar with hierarchy
+        - Username/Password login screen
         - Exchange rate footer bar
         - Backend configuration for LBP/USD rate
     """,

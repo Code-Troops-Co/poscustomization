@@ -23,7 +23,6 @@ patch(ProductScreen.prototype, {
             categories = allCategories.filter((c) => allowedIds.has(c.id));
         }
         return categories
-            .filter((c) => !c.parent_id)
             .sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
     },
 
