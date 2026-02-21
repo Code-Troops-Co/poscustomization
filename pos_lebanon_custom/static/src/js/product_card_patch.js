@@ -4,16 +4,17 @@ import { patch } from "@web/core/utils/patch";
 import { formatCurrency } from "@web/core/currency";
 
 /**
- * Extend the product.template model to expose formatted USD and LBP prices
- * for use in the ProductCard template.
+ * Extend ProductCard to display dual pricing (USD + LBP).
  *
- * We patch the prototype of the product.template record class which is
- * dynamically created by the Odoo data model system. The patch is applied
- * once the model registry is populated by the POS loader.
+ * Root-cause fix: The previous code called product.getPrice(pricelist, 1, 0, false, product)
+ * but `product` here is a product.template, while getPrice() expects a product.product
+ * as the `variant` parameter. This caused `variant.product_tmpl_id` to be undefined → crash → $0.00.
+ *
+ * Fix: Use product.list_price for the raw USD price and config.pricelist_id for pricelist-aware pricing
+ * by passing product.product_variant_ids[0] as the proper variant.
  */
 
-// We use a deferred patching strategy via the pos_hook import
-import { reactive } from "@odoo/owl";
+import { ProductCard } from "@point_of_sale/app/components/product_card/product_card";
 
 /**
  * Helper: format an amount as LBP with thousands separators.
@@ -22,13 +23,6 @@ function _toLbp(amount, rate) {
     return Math.round((amount || 0) * rate).toLocaleString("en-US");
 }
 
-/**
- * Since product.template records are plain reactive objects (not class instances
- * with a patchable prototype), we extend the ProductCard component instead
- * to compute these values at render time.
- */
-import { ProductCard } from "@point_of_sale/app/components/product_card/product_card";
-
 patch(ProductCard.prototype, {
     setup() {
         super.setup(...arguments);
@@ -36,6 +30,7 @@ patch(ProductCard.prototype, {
 
     /**
      * Get the USD price formatted with currency symbol.
+     * Uses the product's first variant and the POS pricelist for accurate pricing.
      */
     get formattedUsdPrice() {
         const product = this.props.product;
@@ -44,16 +39,37 @@ patch(ProductCard.prototype, {
         }
         try {
             const pos = this.env.services.pos;
-            // FIX: Use the default_pricelist object, not the config ID
-            const pricelist = pos.default_pricelist;
-            const price = product.getPrice(pricelist, 1, 0, false, product);
-            const currencyId = pos?.currency?.id || pos?.config?.currency_id?.id;
+            const config = pos.config;
+
+            // Get the correct pricelist from config
+            const pricelist = config.pricelist_id;
+
+            // Get the first product.product variant (getPrice expects a variant, not a template)
+            const variant = product.product_variant_ids && product.product_variant_ids[0];
+
+            let price;
+            if (pricelist && variant) {
+                // Full pricelist-aware price calculation
+                price = product.getPrice(pricelist, 1, 0, false, variant);
+            } else {
+                // Fallback: use list_price directly
+                price = product.list_price || 0;
+            }
+
+            // Format with Odoo's currency formatter
+            const currencyId = config.currency_id?.id;
             if (currencyId) {
                 return formatCurrency(price, currencyId);
             }
             return `$${price.toFixed(2)}`;
-        } catch {
-            return "";
+        } catch (e) {
+            // Last resort fallback: raw list_price
+            try {
+                const price = this.props.product.list_price || 0;
+                return `$${price.toFixed(2)}`;
+            } catch {
+                return "";
+            }
         }
     },
 
@@ -67,10 +83,18 @@ patch(ProductCard.prototype, {
         }
         try {
             const pos = this.env.services.pos;
-            // FIX: Use the default_pricelist object, not the config ID
-            const pricelist = pos.default_pricelist;
-            const price = product.getPrice(pricelist, 1, 0, false, product);
-            const rate = pos?.config?.lbp_usd_rate || 89500;
+            const config = pos.config;
+            const pricelist = config.pricelist_id;
+            const variant = product.product_variant_ids && product.product_variant_ids[0];
+
+            let price;
+            if (pricelist && variant) {
+                price = product.getPrice(pricelist, 1, 0, false, variant);
+            } else {
+                price = product.list_price || 0;
+            }
+
+            const rate = config.lbp_usd_rate || 89500;
             return _toLbp(price, rate) + " LBP";
         } catch {
             return "";

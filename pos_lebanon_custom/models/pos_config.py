@@ -38,36 +38,26 @@ class PosConfig(models.Model):
 
     def authenticate_pos_user(self, username, password):
         """Authenticate a user for POS login via username and password.
-        
+
         Returns a dict with success status and user/employee info.
         Called from the POS frontend login screen patch.
         """
         self.ensure_one()
         try:
-            # Find user by login
-            user = self.env['res.users'].sudo().search([
-                ('login', '=', username),
-            ], limit=1)
+            # Use Odoo's standard authenticate method directly.
+            # This correctly validates the username+password against the database.
+            db_name = self.env.cr.dbname
+            uid = self.env['res.users'].authenticate(
+                db_name, username, password, {'interactive': False}
+            )
 
-            if not user:
+            if not uid:
+                return {'success': False, 'message': 'Invalid username or password.'}
+
+            # Get the authenticated user record
+            user = self.env['res.users'].sudo().browse(uid)
+            if not user.exists():
                 return {'success': False, 'message': 'User not found.'}
-
-            # Validate password via Odoo's authentication
-            try:
-                self.env['res.users'].sudo()._check_credentials(
-                    password, {'interactive': False}
-                )
-            except AccessDenied:
-                # Try authenticating with the found user's context
-                try:
-                    db_name = self.env.cr.dbname
-                    uid = self.env['res.users'].authenticate(
-                        db_name, username, password, {'interactive': False}
-                    )
-                    if not uid:
-                        return {'success': False, 'message': 'Invalid password.'}
-                except Exception:
-                    return {'success': False, 'message': 'Invalid password.'}
 
             # Check if user has a linked employee for POS
             employee = self.env['hr.employee'].sudo().search([
@@ -81,6 +71,11 @@ class PosConfig(models.Model):
                 'user_name': user.name,
             }
 
+        except AccessDenied:
+            return {
+                'success': False,
+                'message': 'Invalid username or password.',
+            }
         except Exception as e:
             _logger.warning("POS login error for user '%s': %s", username, e)
             return {

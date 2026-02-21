@@ -36,12 +36,7 @@
                     </t>
                 </div>
 
-                <!-- Utility Buttons -->
-                <div class="lbp-utility-buttons d-flex flex-column gap-2 p-2 border-top">
-                    <button class="btn btn-outline-secondary rounded-3 py-2 lbp-util-btn fw-semibold">Gift Card</button>
-                    <button class="btn btn-outline-secondary rounded-3 py-2 lbp-util-btn fw-semibold">Discount</button>
-                    <button class="btn btn-outline-danger rounded-3 py-2 lbp-util-btn fw-semibold">Area</button>
-                </div>
+                <!-- Utility buttons removed — will be replaced by Odoo gift card / loyalty modules -->
             </div>
 
             <!-- === FOOTER: Exchange Rate Bar === -->
@@ -116,7 +111,7 @@
 
 
     <!-- ============================================================ -->
-    <!-- 5. PaymentScreen — LBP total due                             -->
+    <!-- 5. PaymentScreen — LBP total due + Enter LBP toggle          -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.PaymentScreenDue" t-inherit="point_of_sale.PaymentScreenDue" t-inherit-mode="extension">
 

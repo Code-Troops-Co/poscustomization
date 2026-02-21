@@ -12,7 +12,8 @@ function _toLbp(amount, rate) {
 }
 
 /**
- * Extend PaymentScreen to show LBP equivalent of the total due.
+ * Extend PaymentScreen to show LBP equivalent of the total due
+ * and provide Enter LBP amount functionality.
  */
 patch(PaymentScreen.prototype, {
     get lbpTotalDue() {
@@ -36,6 +37,27 @@ patch(PaymentScreen.prototype, {
     get lbpRate() {
         const rate = this.pos.config.lbp_usd_rate || 89500;
         return Math.round(rate).toLocaleString("en-US");
+    },
+
+    /**
+     * Get LBP equivalent of the total remaining due.
+     */
+    get lbpRemainingDue() {
+        try {
+            const rate = this.pos.config.lbp_usd_rate || 89500;
+            const remaining = this.currentOrder?.getDue() || 0;
+            return _toLbp(remaining, rate);
+        } catch {
+            return "0";
+        }
+    },
+
+    /**
+     * Format a USD amount as LBP string.
+     */
+    formatLbpAmount(usdAmount) {
+        const rate = this.pos.config.lbp_usd_rate || 89500;
+        return _toLbp(usdAmount, rate);
     },
 });
 

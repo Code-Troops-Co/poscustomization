@@ -11,19 +11,37 @@ import { patch } from "@web/core/utils/patch";
 patch(ProductScreen.prototype, {
 
     /**
-     * Get root-level categories sorted by sequence for the right sidebar.
+     * Get all categories sorted by sequence for the right sidebar.
+     * Returns all available POS categories with defensive null checks.
      * @returns {Array} Sorted array of category records.
      */
     getLbpCategories() {
-        const allCategories = this.pos.models["pos.category"].getAll();
-        const { limit_categories, iface_available_categ_ids } = this.pos.config;
-        let categories = allCategories;
-        if (limit_categories && iface_available_categ_ids.length > 0) {
-            const allowedIds = new Set(iface_available_categ_ids.map((c) => c.id));
-            categories = allCategories.filter((c) => allowedIds.has(c.id));
+        try {
+            const categoryModel = this.pos.models["pos.category"];
+            if (!categoryModel) {
+                return [];
+            }
+            const allCategories = categoryModel.getAll();
+            if (!allCategories || allCategories.length === 0) {
+                return [];
+            }
+
+            const { limit_categories, iface_available_categ_ids } = this.pos.config;
+            let categories = allCategories;
+
+            // Filter by allowed categories if limit is set
+            if (limit_categories && iface_available_categ_ids && iface_available_categ_ids.length > 0) {
+                const allowedIds = new Set(
+                    iface_available_categ_ids.map((c) => (typeof c === "object" ? c.id : c))
+                );
+                categories = allCategories.filter((c) => allowedIds.has(c.id));
+            }
+
+            return categories.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+        } catch (e) {
+            console.warn("getLbpCategories error:", e);
+            return [];
         }
-        return categories
-            .sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
     },
 
     /**
