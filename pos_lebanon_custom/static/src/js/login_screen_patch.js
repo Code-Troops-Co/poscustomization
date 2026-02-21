@@ -66,12 +66,10 @@ patch(LoginScreen.prototype, {
             }
         } catch (e) {
             console.error("POS Login error:", e);
-            // If server method doesn't exist, fall back to default behavior
             this.notification.add(
-                _t("Login service unavailable. Using default login."),
-                { type: "warning" }
+                _t("Authentication service error. Please try again."),
+                { type: "danger" }
             );
-            super.openRegister();
         } finally {
             this.loginState.isLoading = false;
         }

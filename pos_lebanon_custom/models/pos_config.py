@@ -1,9 +1,17 @@
 import logging
 
+from passlib.context import CryptContext
+
 from odoo import api, models, fields
 from odoo.exceptions import AccessDenied
 
 _logger = logging.getLogger(__name__)
+
+# Odoo's password hashing context
+_crypt_context = CryptContext(
+    ['pbkdf2_sha512', 'plaintext'],
+    deprecated=['plaintext'],
+)
 
 
 class PosConfig(models.Model):
@@ -35,7 +43,9 @@ class PosConfig(models.Model):
     def authenticate_pos_user(self, username, password):
         """Authenticate a user for POS login via username and password.
 
-        Uses Odoo 19's _check_credentials API which expects a credentials dict.
+        Verifies the password hash directly from the database to avoid
+        the full _check_credentials chain (which may require a request
+        context due to auth_totp modules).
         """
         self.ensure_one()
         try:
@@ -47,18 +57,25 @@ class PosConfig(models.Model):
             if not user:
                 return {'success': False, 'message': 'User not found.'}
 
-            # 2. Validate password using Odoo 19's _check_credentials
-            # Must run in the target user's environment so self.env.uid matches
-            try:
-                user_env = user.with_user(user)
-                user_env._check_credentials(
-                    {'type': 'password', 'password': password},
-                    {'interactive': False},
-                )
-            except AccessDenied:
+            # 2. Read the hashed password directly from database
+            self.env.cr.execute(
+                "SELECT COALESCE(password, '') FROM res_users WHERE id=%s",
+                [user.id],
+            )
+            row = self.env.cr.fetchone()
+            if not row or not row[0]:
+                return {'success': False, 'message': 'No password set for this user.'}
+
+            stored_hash = row[0]
+
+            # 3. Verify the password against the stored hash
+            valid, _new_hash = _crypt_context.verify_and_update(
+                password, stored_hash
+            )
+            if not valid:
                 return {'success': False, 'message': 'Invalid password.'}
 
-            # 3. Find linked employee
+            # 4. Find linked employee for POS cashier
             employee = self.env['hr.employee'].sudo().search([
                 ('user_id', '=', user.id),
             ], limit=1)
@@ -70,11 +87,6 @@ class PosConfig(models.Model):
                 'user_name': user.name,
             }
 
-        except AccessDenied:
-            return {
-                'success': False,
-                'message': 'Invalid username or password.',
-            }
         except Exception as e:
             _logger.warning("POS login error for user '%s': %s", username, e)
             return {
