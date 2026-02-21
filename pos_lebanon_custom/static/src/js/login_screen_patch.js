@@ -10,6 +10,9 @@ import { rpc } from "@web/core/network/rpc";
 /**
  * Extend LoginScreen to use username + password text inputs instead of
  * the default employee-icon "Open Register" button.
+ *
+ * Handles both pos_hr (employee-based cashier) and non-pos_hr (user-based
+ * cashier) configurations.
  */
 patch(LoginScreen.prototype, {
     setup() {
@@ -48,23 +51,69 @@ patch(LoginScreen.prototype, {
             console.log("POS Login: server response:", JSON.stringify(result));
 
             if (result && result.success) {
-                // setCashier expects a res.users record from POS models.
-                // Look up the authenticated user in the loaded POS data.
-                let cashier = null;
+                if (this.pos.config.module_pos_hr) {
+                    // ─── pos_hr is enabled: cashier must be an hr.employee ───
+                    console.log("POS Login: pos_hr mode – looking up hr.employee for user_id:", result.user_id);
 
-                if (result.user_id) {
-                    // Try to find the user in loaded res.users records
-                    cashier = this.pos.models["res.users"]?.get?.(result.user_id);
-                    console.log("POS Login: found res.users record:", !!cashier);
+                    let employee = null;
+
+                    if (result.employee_id) {
+                        employee = this.pos.models["hr.employee"]?.get?.(result.employee_id);
+                        console.log("POS Login: found employee by employee_id:", !!employee, result.employee_id);
+                    }
+
+                    // Fallback: search employees linked to this user
+                    if (!employee && result.user_id) {
+                        const allEmployees = this.pos.models["hr.employee"]?.getAll?.() || [];
+                        employee = allEmployees.find(
+                            (emp) => emp.user_id && emp.user_id.id === result.user_id
+                        );
+                        console.log("POS Login: found employee by user_id search:", !!employee);
+                    }
+
+                    if (!employee) {
+                        console.warn("POS Login: no hr.employee found for user. Employee-based login required when pos_hr is enabled.");
+                        this.notification.add(
+                            _t("No employee record linked to this user. Please contact your administrator."),
+                            { type: "danger" }
+                        );
+                        return;
+                    }
+
+                    // Set cashier as the hr.employee (what pos_hr expects)
+                    this.pos.setCashier(employee);
+                    this.pos.hasLoggedIn = true;
+
+                    // Navigate to the default page (same logic as cashierLogIn / selectCashier mixin)
+                    const selectedScreen = this.pos.defaultPage;
+                    const props = {
+                        ...selectedScreen.params,
+                        orderUuid: this.pos.selectedOrderUuid,
+                    };
+                    if (selectedScreen.page === "FloorScreen") {
+                        delete props.orderUuid;
+                    }
+                    this.pos.navigate(selectedScreen.page, props);
+
+                    console.log("POS Login: success – navigated to", selectedScreen.page);
+
+                } else {
+                    // ─── No pos_hr: cashier is a res.users record ───
+                    let cashier = null;
+
+                    if (result.user_id) {
+                        cashier = this.pos.models["res.users"]?.get?.(result.user_id);
+                        console.log("POS Login: found res.users record:", !!cashier);
+                    }
+
+                    // Fallback: use the currently logged-in POS user
+                    if (!cashier) {
+                        console.log("POS Login: using fallback this.pos.user");
+                        cashier = this.pos.user;
+                    }
+
+                    this.selectOneCashier(cashier);
                 }
-
-                // Fallback: use the currently logged-in POS user
-                if (!cashier) {
-                    console.log("POS Login: using fallback this.pos.user");
-                    cashier = this.pos.user;
-                }
-
-                this.selectOneCashier(cashier);
             } else {
                 this.notification.add(
                     result?.message || _t("Invalid username or password."),

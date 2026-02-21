@@ -15,7 +15,7 @@
         - Backend configuration for LBP/USD rate
     """,
     'author': 'Code Troops',
-    'depends': ['point_of_sale'],
+    'depends': ['point_of_sale', 'pos_hr'],
     'data': [
         'views/pos_config_views.xml',
     ],
