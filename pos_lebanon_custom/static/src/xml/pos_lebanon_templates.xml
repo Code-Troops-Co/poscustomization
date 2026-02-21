@@ -7,11 +7,11 @@
     <t t-name="pos_lebanon_custom.ProductScreen" t-inherit="point_of_sale.ProductScreen" t-inherit-mode="extension">
 
         <!-- C2: Remove numpad t-if condition to make it always visible -->
-        <xpath expr="//Numpad[hasclass('d-grid')]" position="attributes">
-            <attribute name="t-if"></attribute>
+        <xpath expr="//Numpad" position="attributes">
+            <attribute name="t-if">true</attribute>
         </xpath>
 
-        <!-- Remove the original CategorySelector from the rightpane (center area) -->
+        <!-- Remove the original CategorySelector from the rightpane -->
         <xpath expr="//CategorySelector" position="replace"/>
 
         <!-- Inject the right sidebar + footer AFTER the rightpane closes -->
@@ -45,7 +45,7 @@
             </div>
 
             <!-- === FOOTER: Exchange Rate Bar === -->
-            <div t-if="this.showLbpFooter()" 
+            <div t-if="this.showLbpFooter()"
                  class="lbp-footer-bar d-flex justify-content-between align-items-center px-3 py-2 border-top bg-view w-100">
                 <span class="text-muted fs-6">
                     Active Exchange Rate: <strong t-esc="this.formattedLbpRate()"/> LBP/$
@@ -136,17 +136,17 @@
     <t t-name="pos_lebanon_custom.PaymentScreenStatus" t-inherit="point_of_sale.PaymentScreenStatus" t-inherit-mode="extension">
 
         <xpath expr="//span[hasclass('amount')]" position="after">
-            <div t-if="this.showLbp"
-                 class="lbp-status-amount text-muted"
+            <span t-if="this.showLbp"
+                 class="lbp-status-amount text-muted ms-2"
                  style="font-size: 0.6em; font-weight: 500;">
-                <t t-esc="this.formatLbpAmount(parseFloat(amountText) || 0)"/> LBP
-            </div>
+                | <t t-esc="this.formatLbpAmount(props.order.remainingDue or props.order.change or 0)"/> LBP
+            </span>
         </xpath>
     </t>
 
 
     <!-- ============================================================ -->
-    <!-- 7. OrderReceipt — LBP on total, change, payment lines        -->
+    <!-- 7. OrderReceipt — LBP on total, change, exchange rate        -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.OrderReceipt" t-inherit="point_of_sale.OrderReceipt" t-inherit-mode="extension">
 
@@ -211,11 +211,11 @@
 
 
     <!-- ============================================================ -->
-    <!-- 9. ClosePosPopup — LBP on closing register amounts           -->
+    <!-- 9. ClosePosPopup — LBP on closing register                   -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ClosePosPopup" t-inherit="point_of_sale.ClosePosPopup" t-inherit-mode="extension">
 
-        <!-- LBP after the closing summary header totals -->
+        <!-- LBP exchange rate info in closing popup -->
         <xpath expr="//div[hasclass('closing-header')]" position="after">
             <div t-if="this.showLbp"
                  class="text-muted text-center px-3 pb-2" style="font-size: 0.85em;">
