@@ -25,6 +25,11 @@ class PosConfig(models.Model):
     @api.model
     def _load_pos_data_fields(self, config_id):
         params = super()._load_pos_data_fields(config_id)
+        # CRITICAL: If the parent returns an empty list (pos.load.mixin default),
+        # we must load ALL fields. Otherwise standard POS fields like
+        # use_pricelist, currency_id, etc. will be missing and POS crashes.
+        if not params:
+            params = list(self.fields_get().keys())
         # Add our custom fields if they aren't already included
         for field in ['lbp_usd_rate', 'display_lbp_total']:
             if field not in params:
