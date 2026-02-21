@@ -5,15 +5,15 @@ import { patch } from "@web/core/utils/patch";
 import { useState } from "@odoo/owl";
 import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
+import { rpc } from "@web/core/network/rpc";
 
 /**
  * Extend LoginScreen to use username + password text inputs instead of
- * the default "Open Register" button.
+ * the default employee-icon "Open Register" button.
  */
 patch(LoginScreen.prototype, {
     setup() {
         super.setup(...arguments);
-        this.orm = useService("orm");
         this.notification = useService("notification");
         this.loginState = useState({
             username: "",
@@ -23,7 +23,8 @@ patch(LoginScreen.prototype, {
     },
 
     /**
-     * Override openRegister to authenticate via username/password.
+     * Override openRegister to authenticate via username/password
+     * using a custom HTTP controller endpoint.
      */
     async openRegister() {
         const { username, password } = this.loginState;
@@ -35,12 +36,12 @@ patch(LoginScreen.prototype, {
 
         this.loginState.isLoading = true;
         try {
-            // Authenticate credentials via server-side RPC
-            const result = await this.orm.call(
-                "pos.config",
-                "authenticate_pos_user",
-                [[this.pos.config.id], username, password]
-            );
+            // Call custom HTTP controller endpoint (not orm.call)
+            const result = await rpc("/pos/authenticate_user", {
+                config_id: this.pos.config.id,
+                username: username,
+                password: password,
+            });
 
             if (result && result.success) {
                 // Find the matching cashier in loaded employees/users
