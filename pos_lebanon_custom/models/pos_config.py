@@ -1,17 +1,10 @@
 import logging
-
-from passlib.context import CryptContext
+import hashlib
 
 from odoo import api, models, fields
 from odoo.exceptions import AccessDenied
 
 _logger = logging.getLogger(__name__)
-
-# Odoo's password hashing context
-_crypt_context = CryptContext(
-    ['pbkdf2_sha512', 'plaintext'],
-    deprecated=['plaintext'],
-)
 
 
 class PosConfig(models.Model):
@@ -43,53 +36,86 @@ class PosConfig(models.Model):
     def authenticate_pos_user(self, username, password):
         """Authenticate a user for POS login via username and password.
 
-        Verifies the password hash directly from the database to avoid
-        the full _check_credentials chain (which may require a request
-        context due to auth_totp modules).
+        Strategy:
+          1. Find user by login
+          2. Read password hash from database
+          3. Verify with passlib (Odoo's own dependency)
+          4. Return user + employee info
         """
         self.ensure_one()
+        _logger.info("POS auth attempt for user '%s' on config %s", username, self.id)
+
+        # 1. Find user
         try:
-            # 1. Find the user by login
             user = self.env['res.users'].sudo().search([
                 ('login', '=', username),
             ], limit=1)
+        except Exception as e:
+            _logger.error("POS auth: error searching user '%s': %s", username, e)
+            return {'success': False, 'message': 'System error. Please try again.'}
 
-            if not user:
-                return {'success': False, 'message': 'User not found.'}
+        if not user:
+            _logger.info("POS auth: user '%s' not found", username)
+            return {'success': False, 'message': 'User not found.'}
 
-            # 2. Read the hashed password directly from database
+        _logger.info("POS auth: found user '%s' (id=%s)", user.login, user.id)
+
+        # 2. Read password hash
+        try:
             self.env.cr.execute(
                 "SELECT COALESCE(password, '') FROM res_users WHERE id=%s",
-                [user.id],
+                (user.id,),
             )
             row = self.env.cr.fetchone()
-            if not row or not row[0]:
-                return {'success': False, 'message': 'No password set for this user.'}
+        except Exception as e:
+            _logger.error("POS auth: error reading password for user %s: %s", user.id, e)
+            return {'success': False, 'message': 'System error. Please try again.'}
 
-            stored_hash = row[0]
+        if not row or not row[0]:
+            _logger.warning("POS auth: no password set for user '%s'", username)
+            return {'success': False, 'message': 'No password set for this user.'}
 
-            # 3. Verify the password against the stored hash
-            valid, _new_hash = _crypt_context.verify_and_update(
-                password, stored_hash
-            )
-            if not valid:
-                return {'success': False, 'message': 'Invalid password.'}
+        stored_hash = row[0]
+        _logger.info("POS auth: retrieved password hash for user '%s' (len=%d)", username, len(stored_hash))
 
-            # 4. Find linked employee for POS cashier
+        # 3. Verify password
+        try:
+            from passlib.context import CryptContext
+            ctx = CryptContext(['pbkdf2_sha512', 'plaintext'], deprecated=['plaintext'])
+            valid = ctx.verify(password, stored_hash)
+        except ImportError:
+            _logger.warning("POS auth: passlib not available, trying fallback")
+            # Ultra-fallback: try to use Odoo's own utility
+            try:
+                from odoo.tools.misc import verify_password  # noqa
+                valid = verify_password(password, stored_hash)
+            except (ImportError, AttributeError):
+                _logger.error("POS auth: no password verification method available")
+                return {'success': False, 'message': 'Password verification unavailable.'}
+        except Exception as e:
+            _logger.error("POS auth: password verification error for '%s': %s", username, e)
+            return {'success': False, 'message': 'Invalid password.'}
+
+        if not valid:
+            _logger.info("POS auth: invalid password for user '%s'", username)
+            return {'success': False, 'message': 'Invalid password.'}
+
+        _logger.info("POS auth: password verified for user '%s'", username)
+
+        # 4. Find linked employee
+        try:
             employee = self.env['hr.employee'].sudo().search([
                 ('user_id', '=', user.id),
             ], limit=1)
-
-            return {
-                'success': True,
-                'user_id': user.id,
-                'employee_id': employee.id if employee else False,
-                'user_name': user.name,
-            }
-
         except Exception as e:
-            _logger.warning("POS login error for user '%s': %s", username, e)
-            return {
-                'success': False,
-                'message': 'Authentication failed. Please try again.',
-            }
+            _logger.warning("POS auth: error searching employee for user %s: %s", user.id, e)
+            employee = False
+
+        result = {
+            'success': True,
+            'user_id': user.id,
+            'employee_id': employee.id if employee else False,
+            'user_name': user.name,
+        }
+        _logger.info("POS auth: success for user '%s' → %s", username, result)
+        return result
