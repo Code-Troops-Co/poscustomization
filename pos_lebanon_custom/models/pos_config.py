@@ -25,12 +25,8 @@ class PosConfig(models.Model):
     @api.model
     def _load_pos_data_fields(self, config_id):
         params = super()._load_pos_data_fields(config_id)
-        # CRITICAL: If the parent returns an empty list (pos.load.mixin default),
-        # we must load ALL fields. Otherwise standard POS fields like
-        # use_pricelist, currency_id, etc. will be missing and POS crashes.
         if not params:
             params = list(self.fields_get().keys())
-        # Add our custom fields if they aren't already included
         for field in ['lbp_usd_rate', 'display_lbp_total']:
             if field not in params:
                 params.append(field)
@@ -39,27 +35,30 @@ class PosConfig(models.Model):
     def authenticate_pos_user(self, username, password):
         """Authenticate a user for POS login via username and password.
 
-        Returns a dict with success status and user/employee info.
-        Called from the POS frontend login screen patch.
+        Uses Odoo 19's _check_credentials API which expects a credentials dict.
         """
         self.ensure_one()
         try:
-            # Use Odoo's standard authenticate method directly.
-            # This correctly validates the username+password against the database.
-            db_name = self.env.cr.dbname
-            uid = self.env['res.users'].authenticate(
-                db_name, username, password, {'interactive': False}
-            )
+            # 1. Find the user by login
+            user = self.env['res.users'].sudo().search([
+                ('login', '=', username),
+            ], limit=1)
 
-            if not uid:
-                return {'success': False, 'message': 'Invalid username or password.'}
-
-            # Get the authenticated user record
-            user = self.env['res.users'].sudo().browse(uid)
-            if not user.exists():
+            if not user:
                 return {'success': False, 'message': 'User not found.'}
 
-            # Check if user has a linked employee for POS
+            # 2. Validate password using Odoo 19's _check_credentials
+            # Must run in the target user's environment so self.env.uid matches
+            try:
+                user_env = user.with_user(user)
+                user_env._check_credentials(
+                    {'type': 'password', 'password': password},
+                    {'interactive': False},
+                )
+            except AccessDenied:
+                return {'success': False, 'message': 'Invalid password.'}
+
+            # 3. Find linked employee
             employee = self.env['hr.employee'].sudo().search([
                 ('user_id', '=', user.id),
             ], limit=1)
