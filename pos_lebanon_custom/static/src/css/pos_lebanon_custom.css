@@ -272,3 +272,126 @@
     border-bottom: 1px solid var(--bs-border-color, #dee2e6);
     padding-bottom: 4px;
 }
+
+/* ================================================================
+   8. ORDER SUMMARY — REDESIGNED ORDERLINE
+   ================================================================ */
+
+/* Base row: give breathing room, top border as subtle separator */
+.pos-order-summary .orderline,
+.order-summary .orderline {
+    padding: 9px 12px 9px 8px;
+    border-bottom: 1px solid var(--bs-border-color, #f0f0f0);
+    border-left: 3px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+    background: transparent;
+    border-radius: 0;
+    display: flex;
+    align-items: flex-start;
+}
+
+/* Selected row: blue left accent + very light blue tint */
+.pos-order-summary .orderline.selected,
+.order-summary .orderline.selected {
+    border-left-color: var(--bs-primary, #0d6efd);
+    background: rgba(13, 110, 253, 0.06);
+}
+
+/* Hover (non-selected) */
+.pos-order-summary .orderline:not(.selected):hover,
+.order-summary .orderline:not(.selected):hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* ── Circular qty badge ───────────────────────────────────────── */
+.pos-lbp-qty-badge {
+    min-width: 30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--bs-primary-bg-subtle, #cfe2ff);
+    color: var(--bs-primary, #0d6efd);
+    border: 1.5px solid var(--bs-primary-border-subtle, #9ec5fe);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 1px;
+}
+
+/* When the row is selected, badge is solid primary */
+.orderline.selected .pos-lbp-qty-badge,
+.pos-lbp-qty-badge--selected {
+    background: var(--bs-primary, #0d6efd);
+    color: #fff;
+    border-color: var(--bs-primary, #0d6efd);
+}
+
+/* ── Name block ───────────────────────────────────────────────── */
+.pos-lbp-name-block {
+    min-width: 0;
+    /* allow text-truncate to work */
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.pos-lbp-product-name {
+    font-size: 0.9rem;
+    color: var(--bs-body-color, #212529);
+    line-height: 1.3;
+}
+
+.pos-lbp-variant {
+    font-size: 0.76rem;
+    color: var(--bs-secondary, #6c757d);
+    font-style: italic;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pos-lbp-note {
+    font-size: 0.74rem;
+    color: #e09200;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Price block ──────────────────────────────────────────────── */
+.pos-lbp-price-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 80px;
+    margin-left: 4px;
+}
+
+.pos-lbp-price-usd {
+    font-size: 0.92rem;
+    color: var(--bs-body-color, #212529);
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.pos-lbp-price-lbp {
+    font-size: 0.72rem;
+    color: var(--bs-success, #198754);
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.pos-lbp-discount {
+    font-size: 0.7rem;
+    color: var(--bs-warning, #ffc107);
+    line-height: 1.2;
+}

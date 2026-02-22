@@ -89,14 +89,43 @@
 
 
     <!-- ============================================================ -->
-    <!-- 3. Orderline: Append LBP subtotal on its own line            -->
+    <!-- 3. Orderline: Full redesign — qty badge, stacked pricing      -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.Orderline" t-inherit="point_of_sale.Orderline" t-inherit-mode="extension">
-        <xpath expr="//div[hasclass('product-price')]" position="after">
-            <div t-if="line.order_id.config_id.display_lbp_total and !line.combo_parent_id"
-                 class="lbp-amount text-end"
-                 style="font-size: 0.7rem; line-height: 1.1;">
-                <t t-esc="this.getLineLbp()"/> LBP
+        <xpath expr="//div[hasclass('line-details')]" position="replace">
+            <div class="line-details pos-lbp-orderline d-flex align-items-start justify-content-between">
+
+                <!-- Circular qty badge on the left -->
+                <div class="pos-lbp-qty-badge" t-att-class="{'pos-lbp-qty-badge--selected': lineContainerClasses.selected}">
+                    <span t-esc="vals.unitPart"/><small t-if="vals.decimalPart" t-out="vals.decimalPart"/>
+                </div>
+
+                <!-- Product name + variant (grows) -->
+                <div class="pos-lbp-name-block flex-grow-1 px-2 text-truncate">
+                    <div class="pos-lbp-product-name fw-bold text-truncate">
+                        <t t-esc="vals.name"/>
+                    </div>
+                    <div t-if="vals.attributeString" class="pos-lbp-variant">
+                        <t t-out="vals.attributeString"/>
+                    </div>
+                    <div t-if="line.customer_note" class="pos-lbp-note">
+                        <i class="fa fa-sticky-note me-1"/><t t-esc="line.customer_note"/>
+                    </div>
+                </div>
+
+                <!-- Stacked price: USD then LBP -->
+                <div class="pos-lbp-price-block text-end flex-shrink-0">
+                    <div t-if="vals.price" t-out="vals.price"
+                         class="pos-lbp-price-usd fw-bold"/>
+                    <div t-if="line.order_id.config_id.display_lbp_total and !line.combo_parent_id"
+                         class="pos-lbp-price-lbp">
+                        <t t-esc="this.getLineLbp()"/> LBP
+                    </div>
+                    <div t-if="vals.discount" class="pos-lbp-discount">
+                        <i class="fa fa-tag"/> <t t-esc="vals.discount"/>%
+                    </div>
+                </div>
+
             </div>
         </xpath>
     </t>
