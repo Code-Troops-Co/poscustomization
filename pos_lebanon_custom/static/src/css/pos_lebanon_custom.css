@@ -395,3 +395,133 @@
     color: var(--bs-warning, #ffc107);
     line-height: 1.2;
 }
+
+/* ================================================================
+   9. STICKY TOTALS BAR (above numpad, always visible)
+   ================================================================ */
+.pos-sticky-totals {
+    flex-shrink: 0;
+    background: var(--bs-body-bg, #fff);
+    border-top: 2px solid var(--bs-border-color, #dee2e6);
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    padding: 4px 10px 3px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.pos-sticky-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+    line-height: 1.25;
+}
+
+/* Subtle top separator for Total row */
+.pos-sticky-total {
+    border-top: 1px solid var(--bs-border-color, #dee2e6);
+    margin-top: 2px;
+    padding-top: 3px;
+}
+
+.pos-sticky-label {
+    color: var(--bs-secondary, #6c757d);
+    font-size: 0.78rem;
+    font-weight: 500;
+    min-width: 56px;
+}
+
+.pos-sticky-total .pos-sticky-label {
+    color: var(--bs-body-color, #212529);
+    font-size: 0.85rem;
+}
+
+.pos-sticky-amounts {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+}
+
+.pos-sticky-usd {
+    font-size: 0.82rem;
+    color: var(--bs-body-color, #212529);
+    line-height: 1.2;
+}
+
+.pos-sticky-total .pos-sticky-usd {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.pos-sticky-lbp {
+    font-size: 0.68rem;
+    color: var(--bs-success, #198754);
+    line-height: 1.1;
+}
+
+.pos-sticky-lbp--total {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.pos-sticky-rate {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 3px;
+}
+
+/* ================================================================
+   10. COMPACT ORDERLINE ROWS  (recover screen space)
+   ================================================================ */
+
+/* Reduce row padding from 9px → 5px (saves ~8px per item) */
+.pos-order-summary .orderline,
+.order-summary .orderline {
+    padding: 5px 10px 5px 6px !important;
+}
+
+/* Smaller qty badge: 30px → 26px */
+.pos-lbp-qty-badge {
+    min-width: 26px !important;
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.76rem !important;
+}
+
+/* Tighten name block */
+.pos-lbp-product-name {
+    font-size: 0.86rem !important;
+}
+
+.pos-lbp-variant {
+    font-size: 0.72rem !important;
+}
+
+/* Tighten price block */
+.pos-lbp-price-usd {
+    font-size: 0.86rem !important;
+}
+
+.pos-lbp-price-lbp {
+    font-size: 0.68rem !important;
+}
+
+/* ================================================================
+   11. COMPACT CONTROL BUTTONS (Customer / Note / ⋮)
+   ================================================================ */
+.product-screen .control-buttons,
+.product-screen .pads .control-buttons {
+    min-height: 0 !important;
+    padding: 4px 6px !important;
+}
+
+.product-screen .control-buttons button,
+.product-screen .pads .control-buttons button {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    font-size: 0.88rem !important;
+}

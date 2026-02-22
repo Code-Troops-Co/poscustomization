@@ -53,24 +53,45 @@
             </div>
         </xpath>
 
-        <!-- C) Inject LBP footer bar at bottom of product-screen div -->
-        <xpath expr="//div[hasclass('product-screen')]" position="inside">
-            <div t-if="this.showLbpFooter"
-                 class="lbp-footer-bar d-flex justify-content-between align-items-center px-3 py-2 w-100">
-                <span>
-                    Rate: <span class="lbp-rate-badge"><t t-esc="this.formattedLbpRate()"/> LBP/$</span>
-                </span>
-                <span t-if="currentOrder">
-                    Total: <strong t-esc="this.env.utils.formatCurrency(currentOrder.priceIncl)"/>
-                    | <span class="lbp-total-lbp"><t t-esc="this.lbpTotal"/> LBP</span>
-                </span>
+        <!-- C) Sticky totals bar injected BEFORE the pads (numpad area) -->
+        <xpath expr="//div[hasclass('pads')]" position="before">
+            <div t-if="this.showLbp and currentOrder"
+                 class="pos-sticky-totals">
+                <!-- Subtotal row -->
+                <div class="pos-sticky-row pos-sticky-subtotal">
+                    <span class="pos-sticky-label">Subtotal</span>
+                    <div class="pos-sticky-amounts">
+                        <span class="pos-sticky-usd"><t t-esc="this.stickySubtotalUsd"/></span>
+                        <span class="pos-sticky-lbp"><t t-esc="this.stickySubtotalLbp"/> LBP</span>
+                    </div>
+                </div>
+                <!-- Tax row (only if there is tax) -->
+                <div t-if="this.hasTax" class="pos-sticky-row pos-sticky-tax">
+                    <span class="pos-sticky-label">Tax</span>
+                    <div class="pos-sticky-amounts">
+                        <span class="pos-sticky-usd"><t t-esc="this.stickyTaxUsd"/></span>
+                        <span class="pos-sticky-lbp"><t t-esc="this.stickyTaxLbp"/> LBP</span>
+                    </div>
+                </div>
+                <!-- Total row -->
+                <div class="pos-sticky-row pos-sticky-total">
+                    <span class="pos-sticky-label fw-bold">Total</span>
+                    <div class="pos-sticky-amounts">
+                        <span class="pos-sticky-usd fw-bold"><t t-esc="this.stickyTotalUsd"/></span>
+                        <span class="pos-sticky-lbp pos-sticky-lbp--total"><t t-esc="this.stickyTotalLbp"/> LBP</span>
+                    </div>
+                </div>
+                <!-- Exchange rate chip -->
+                <div class="pos-sticky-rate">
+                    <span class="lbp-rate-badge"><t t-esc="this.formattedLbpRate()"/> LBP / $</span>
+                </div>
             </div>
         </xpath>
     </t>
 
 
     <!-- ============================================================ -->
-    <!-- 2. OrderDisplay: Append LBP equivalents to Taxes + Total     -->
+    <!-- 2. OrderDisplay: LBP inline (kept minimal; sticky bar shows totals) -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.OrderDisplay" t-inherit="point_of_sale.OrderDisplay" t-inherit-mode="extension">
         <xpath expr="//span[hasclass('tax')]" position="after">

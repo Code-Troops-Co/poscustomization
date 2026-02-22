@@ -8,7 +8,7 @@ import { ProductScreen } from "@point_of_sale/app/screens/product_screen/product
  * Patch ProductScreen to:
  * 1. Show inventory categories in a right sidebar
  * 2. Filter products by selected internal category (product.category)
- * 3. Keep existing LBP footer logic
+ * 3. Sticky totals bar (Subtotal / Tax / Total + LBP) above the numpad
  */
 patch(ProductScreen.prototype, {
     setup() {
@@ -18,10 +18,8 @@ patch(ProductScreen.prototype, {
         });
     },
 
-    /**
-     * Get all distinct internal (inventory) categories from loaded products.
-     * Returns [{id, name, complete_name}] sorted by name.
-     */
+    // ── Internal category sidebar ──────────────────────────────────
+
     get internalCategories() {
         const seen = new Map();
         const products = this.pos.models["product.product"]?.getAll?.() ||
@@ -35,62 +33,96 @@ patch(ProductScreen.prototype, {
                 });
             }
         }
-        // Sort alphabetically
         return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
     },
 
-    /**
-     * Set / toggle the selected internal category. null = All.
-     */
     selectInternalCategory(id) {
         if (this.categoryState.selectedInternalCategId === id) {
-            // Click same → deselect (show all)
             this.categoryState.selectedInternalCategId = null;
         } else {
             this.categoryState.selectedInternalCategId = id;
         }
     },
 
-    /**
-     * Get products to display, filtered by internal category if one is selected.
-     * Overrides native productToDisplayByCateg logic for the rightpane display.
-     */
     get filteredProductGroups() {
         const selectedId = this.categoryState.selectedInternalCategId;
-
-        // Use Odoo's native grouping (which respects POS category / search)
         const nativeGroups = this.pos.productToDisplayByCateg || [];
-
-        if (!selectedId) {
-            return nativeGroups;
-        }
-
-        // Filter: keep only products whose categ_id matches selected internal category
+        if (!selectedId) return nativeGroups;
         const filtered = [];
         for (const [groupKey, products] of nativeGroups) {
             const matching = products.filter(
                 (p) => p.categ_id && p.categ_id.id === selectedId
             );
-            if (matching.length > 0) {
-                filtered.push([groupKey, matching]);
-            }
+            if (matching.length > 0) filtered.push([groupKey, matching]);
         }
         return filtered;
     },
 
+    // ── LBP helpers ───────────────────────────────────────────────
+
+    get _lbpRate() {
+        return this.pos.config.lbp_usd_rate || 89500;
+    },
+
+    get showLbp() {
+        return !!this.pos.config.display_lbp_total;
+    },
+
+    /** @deprecated use showLbp — kept for template backward-compat */
     get showLbpFooter() {
-        return !!this.pos.config.display_lbp_total && !this.ui.isSmall;
+        return this.showLbp && !this.ui.isSmall;
     },
 
     formattedLbpRate() {
-        const rate = this.pos.config.lbp_usd_rate || 89500;
-        return Math.round(rate).toLocaleString("en-US");
+        return Math.round(this._lbpRate).toLocaleString("en-US");
     },
 
-    get lbpTotal() {
+    _fmt(usd) {
+        return Math.round((usd || 0) * this._lbpRate).toLocaleString("en-US");
+    },
+
+    // ── Sticky totals bar getters ─────────────────────────────────
+
+    get stickySubtotalUsd() {
+        if (!this.currentOrder) return "";
+        return this.env.utils.formatCurrency(
+            (this.currentOrder.priceIncl || 0) - (this.currentOrder.amountTaxes || 0)
+        );
+    },
+
+    get stickyTaxUsd() {
+        if (!this.currentOrder) return "";
+        return this.env.utils.formatCurrency(this.currentOrder.amountTaxes || 0);
+    },
+
+    get stickyTotalUsd() {
+        if (!this.currentOrder) return "";
+        return this.env.utils.formatCurrency(this.currentOrder.priceIncl || 0);
+    },
+
+    get stickySubtotalLbp() {
         if (!this.currentOrder) return "0";
-        const rate = this.pos.config.lbp_usd_rate || 89500;
-        const totalIncl = this.currentOrder.priceIncl || 0;
-        return Math.round(totalIncl * rate).toLocaleString("en-US");
+        return this._fmt(
+            (this.currentOrder.priceIncl || 0) - (this.currentOrder.amountTaxes || 0)
+        );
+    },
+
+    get stickyTaxLbp() {
+        if (!this.currentOrder) return "0";
+        return this._fmt(this.currentOrder.amountTaxes || 0);
+    },
+
+    get stickyTotalLbp() {
+        if (!this.currentOrder) return "0";
+        return this._fmt(this.currentOrder.priceIncl || 0);
+    },
+
+    get hasTax() {
+        return (this.currentOrder?.amountTaxes || 0) > 0;
+    },
+
+    // ── Kept for backward compat ──────────────────────────────────
+    get lbpTotal() {
+        return this.stickyTotalLbp;
     },
 });
