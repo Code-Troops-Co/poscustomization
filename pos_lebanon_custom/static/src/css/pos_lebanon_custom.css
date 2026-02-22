@@ -1,122 +1,232 @@
-/* ============================================================
-   POS Lebanon Custom — Stylesheet
-   Odoo-native colors. No dark overrides.
-   ============================================================ */
+/* ================================================================
+   POS Lebanon Custom — Master Styles
+   ================================================================ */
 
-/* ── 1. LBP Amount (global) ── */
-.lbp-amount {
-    font-variant-numeric: tabular-nums;
-    color: var(--bs-secondary-color, #6c757d);
-    font-weight: 500;
-}
-
-/* ── 2. Product Card dual-price ── */
-.lbp-product-price {
-    text-align: center;
-    line-height: 1.2;
-}
-
-/* ── 3. Footer Bar — light, Odoo-native style ── */
+/* ────────────────────────────────────────────────────────────────
+   1. LBP FOOTER BAR  (Odoo-native light colors)
+   ──────────────────────────────────────────────────────────────── */
 .lbp-footer-bar {
-    font-size: 0.82rem;
-    background-color: var(--bs-body-bg, #f8f9fa);
-    color: var(--bs-body-color, #212529);
+    background-color: var(--bs-body-bg, #fff);
     border-top: 1px solid var(--bs-border-color, #dee2e6);
+    color: var(--bs-body-color, #212529);
+    font-size: 0.82rem;
     flex-shrink: 0;
-    z-index: 5;
 }
 
-.lbp-footer-bar .lbp-rate-badge {
-    font-weight: 600;
-    color: var(--bs-primary, #0d6efd);
-}
-
-.lbp-footer-bar .lbp-total-lbp {
+.lbp-rate-badge {
+    background: var(--bs-primary, #0d6efd);
+    color: #fff;
+    border-radius: 4px;
+    padding: 1px 6px;
     font-weight: 700;
-    color: var(--bs-success, #198754);
+    font-size: 0.78rem;
 }
 
-/* ── 4. Order Lines Area — scrollable above numpad (Option A) ──
-   Targets Odoo's actual order-scroller wrapper */
-.product-screen .order-container {
+.lbp-total-lbp {
+    color: var(--bs-success, #198754);
+    font-weight: 600;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   2. PRODUCT SCREEN — LEFT PANE SCROLL FIX (Order Summary)
+   The leftpane must be a flex-column, OrderSummary fills remaining
+   space and scrolls, pads (numpad) stays at bottom fixed.
+   ──────────────────────────────────────────────────────────────── */
+.product-screen .leftpane {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    flex: 1;
+    /* clip children */
+    height: 100%;
+}
+
+/* OrderSummary / OrderDisplay: fill space and scroll */
+.product-screen .leftpane .order-summary,
+.product-screen .leftpane .order-display,
+.product-screen .leftpane>div:first-child {
+    flex: 1 1 0;
     min-height: 0;
+    overflow-y: auto;
 }
 
-.product-screen .order-scroller {
-    overflow-y: auto !important;
-    flex: 1;
-    min-height: 0;
+/* Pads (control buttons + numpad + payment): never grow/shrink */
+.product-screen .leftpane .pads {
+    flex: 0 0 auto;
 }
 
-/* Also target the right pane wrapper */
-.product-screen .rightpane,
-.product-screen .order-pane {
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    min-height: 0 !important;
+/* ────────────────────────────────────────────────────────────────
+   3. INVENTORY CATEGORY SIDEBAR (right panel)
+   ──────────────────────────────────────────────────────────────── */
+.lbp-category-sidebar {
+    width: 170px;
+    min-width: 150px;
+    max-width: 200px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--bs-border-color, #dee2e6);
+    background: var(--bs-body-bg, #fff);
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
-/* ── 5. Payment Screen — contain due amount so lines stay visible ── */
-.payment-screen .paymentlines-container .total {
-    /* Override the inline font-size: 125px on desktop — cap it */
-    font-size: clamp(3rem, 8vw, 5.5rem) !important;
-    line-height: 1.1;
+.lbp-category-sidebar-header {
+    padding: 8px 10px 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bs-secondary, #6c757d);
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    flex-shrink: 0;
 }
 
-/* LBP sub-amount under the main payment due total */
-.payment-screen .paymentlines-container .total .lbp-amount {
-    font-size: 1rem !important;
+.lbp-category-list {
+    flex: 1 1 0;
+    overflow-y: auto;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.lbp-category-btn {
     display: block;
-    margin-top: 0.25rem;
-    color: var(--bs-success, #198754);
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    text-align: left;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--bs-body-color, #212529);
+    cursor: pointer;
+    line-height: 1.3;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lbp-category-btn:hover {
+    background: var(--bs-primary-bg-subtle, #cfe2ff);
+    border-color: var(--bs-primary-border-subtle, #9ec5fe);
+}
+
+.lbp-category-btn.active {
+    background: var(--bs-primary, #0d6efd);
+    color: #fff;
+    border-color: var(--bs-primary, #0d6efd);
     font-weight: 700;
 }
 
-/* ── 6. Receipt — per-line LBP amount on its own row ── */
-.pos-receipt .lbp-receipt-line {
+.lbp-category-btn-all {
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    margin-bottom: 4px;
+    padding-bottom: 10px;
+}
+
+/* Sidebar replaces native CategorySelector on desktop — hide it */
+@media (min-width: 768px) {
+    .product-screen .rightpane>div:first-child>.category-list {
+        display: none;
+    }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   4. PAYMENT SCREEN — METHODS GRID (no scroll, all visible)
+   ──────────────────────────────────────────────────────────────── */
+.lbp-payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    padding: 10px;
+    width: 100%;
+}
+
+.lbp-payment-method-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 10px;
+    border: 2px solid var(--bs-border-color, #dee2e6);
+    border-radius: 10px;
+    background: var(--bs-body-bg, #fff);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--bs-body-color, #212529);
+    transition: all 0.15s;
+    min-height: 64px;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.lbp-payment-method-btn:hover {
+    border-color: var(--bs-primary, #0d6efd);
+    background: var(--bs-primary-bg-subtle, #cfe2ff);
+    color: var(--bs-primary, #0d6efd);
+}
+
+.lbp-payment-method-btn.selected {
+    border-color: var(--bs-primary, #0d6efd);
+    background: var(--bs-primary, #0d6efd);
+    color: #fff;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   5. PAYMENT SCREEN — LBP Info Banner & Total Clamp
+   ──────────────────────────────────────────────────────────────── */
+.lbp-info-bar {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    padding: 6px 12px;
+    margin: 6px 0;
+}
+
+/* Clamp the giant font Odoo uses for total due */
+.payment-screen .payment-screen-total {
+    font-size: clamp(3rem, 8vw, 5.5rem) !important;
+}
+
+.lbp-total-due {
+    color: var(--bs-success, #198754);
+    font-size: 1rem;
+    font-weight: 600;
+    display: block;
+    text-align: center;
+    margin-top: -6px;
+    margin-bottom: 4px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   6. RECEIPT — LBP line styling
+   ──────────────────────────────────────────────────────────────── */
+.lbp-receipt-line {
+    display: block;
+    font-size: 0.75em;
+    color: #555;
+    white-space: nowrap;
+}
+
+.lbp-receipt-total {
+    display: block;
+    font-size: 0.8em;
+    color: #198754;
+    font-weight: 600;
+}
+
+.lbp-receipt-rate {
     display: block;
     font-size: 0.78em;
-    color: #666;
-    text-align: right;
-    padding-right: 0;
-    margin-top: -2px;
-}
-
-/* LBP total block on receipt */
-.pos-receipt .lbp-receipt-total {
-    text-align: right;
-    font-size: 0.88em;
-    font-weight: 700;
-    color: #198754;
-    margin-top: 2px;
-}
-
-/* Rate line at bottom of receipt */
-.pos-receipt .lbp-receipt-rate {
-    font-size: 0.75em;
-    color: #888;
+    color: #555;
     text-align: center;
+    margin-top: 4px;
     border-top: 1px dashed #ccc;
-    padding-top: 6px;
-    margin-top: 6px;
-}
-
-/* ── 7. Print ── */
-@media print {
-
-    .lbp-amount,
-    .lbp-receipt-line,
-    .lbp-receipt-total {
-        color: #333 !important;
-        -webkit-print-color-adjust: exact;
-    }
-
-    .lbp-footer-bar {
-        display: none !important;
-    }
+    padding-top: 4px;
 }

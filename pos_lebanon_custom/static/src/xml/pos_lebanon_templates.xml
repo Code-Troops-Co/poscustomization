@@ -2,14 +2,62 @@
 <templates id="template" xml:space="preserve">
 
     <!-- ============================================================ -->
-    <!-- 1. ProductScreen: LBP footer bar (light Odoo style)          -->
-    <!-- NOTE: Numpad override REMOVED — was breaking CategorySelector-->
+    <!-- 1. ProductScreen: Category Sidebar + LBP footer              -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ProductScreen" t-inherit="point_of_sale.ProductScreen" t-inherit-mode="extension">
 
-        <!-- Inject footer INSIDE the product-screen div, at the bottom -->
+        <!-- A) Inject inventory-category sidebar AFTER the rightpane -->
+        <xpath expr="//div[hasclass('rightpane')]" position="after">
+            <div t-if="!ui.isSmall" class="lbp-category-sidebar">
+                <div class="lbp-category-sidebar-header">Categories</div>
+                <div class="lbp-category-list">
+                    <!-- "All" button -->
+                    <button class="lbp-category-btn lbp-category-btn-all"
+                            t-att-class="{'active': !this.categoryState.selectedInternalCategId}"
+                            t-on-click="() => this.selectInternalCategory(null)">
+                        All
+                    </button>
+                    <!-- One button per internal (inventory) category -->
+                    <t t-foreach="this.internalCategories" t-as="cat" t-key="cat.id">
+                        <button class="lbp-category-btn"
+                                t-att-class="{'active': this.categoryState.selectedInternalCategId === cat.id}"
+                                t-on-click="() => this.selectInternalCategory(cat.id)"
+                                t-att-title="cat.name">
+                            <t t-esc="cat.name"/>
+                        </button>
+                    </t>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- B) Replace the product-list rendering to use filteredProductGroups -->
+        <xpath expr="//div[hasclass('overflow-y-auto')]" position="replace">
+            <div t-if="this.filteredProductGroups.length > 0"
+                 class="overflow-y-auto" t-on-scroll="onScroll">
+                <div t-foreach="this.filteredProductGroups"
+                     t-as="productCateg" t-key="productCateg[0]"
+                     class="product-list d-grid gap-1 gap-lg-2 px-2 pt-0 pb-2">
+                    <ProductCard
+                        t-foreach="productCateg[1]" t-as="product" t-key="product.id"
+                        productId="product.id"
+                        product="product"
+                        class="pos.productViewMode"
+                        name="getProductName(product)"
+                        color="product.color || product.pos_categ_ids?.at(-1)?.color"
+                        imageUrl="pos.config.show_product_images and this.getProductImage(product)"
+                        onClick.bind="() => this.addProductToOrder(product)"
+                        t-on-mousedown="(event) => this.onMouseDown(event, product)"
+                        t-on-mouseup="longPressHandlers.onMouseUp"
+                        t-on-touchstart="(event) => this.onTouchStart(product)"
+                        t-on-touchend="longPressHandlers.onTouchEnd"
+                        productCartQty="this.state.quantityByProductTmplId[product.id]" />
+                </div>
+            </div>
+        </xpath>
+
+        <!-- C) Inject LBP footer bar at bottom of product-screen div -->
         <xpath expr="//div[hasclass('product-screen')]" position="inside">
-            <div t-if="this.showLbpFooter()"
+            <div t-if="this.showLbpFooter"
                  class="lbp-footer-bar d-flex justify-content-between align-items-center px-3 py-2 w-100">
                 <span>
                     Rate: <span class="lbp-rate-badge"><t t-esc="this.formattedLbpRate()"/> LBP/$</span>
@@ -79,41 +127,60 @@
 
 
     <!-- ============================================================ -->
-    <!-- 5. PaymentScreen — LBP total due display                     -->
-    <!-- Toggle button REMOVED — auto-conversion by method name       -->
+    <!-- 5. PaymentScreen — LBP total due + info banner               -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.PaymentScreenDue" t-inherit="point_of_sale.PaymentScreenDue" t-inherit-mode="extension">
 
         <xpath expr="//div[hasclass('total')]" position="inside">
             <div t-if="this.showLbp"
-                 class="lbp-amount text-center"
-                 style="font-size: 0.35em; font-weight: 700;">
+                 class="lbp-total-due">
                 <t t-esc="this.lbpTotalDue"/> LBP
             </div>
         </xpath>
     </t>
 
-    <!-- Show LBP equivalent next to each payment method button -->
+    <!-- Info banner: shows LBP equivalent when an LBP method line is selected -->
     <t t-name="pos_lebanon_custom.PaymentScreen" t-inherit="point_of_sale.PaymentScreen" t-inherit-mode="extension">
-        <!-- Info bar: tells user that LBP methods auto-convert -->
         <xpath expr="//Numpad" position="before">
             <div t-if="this.showLbp and this.isLbpLineSelected"
-                 class="alert alert-success p-2 mb-2 text-center"
-                 style="font-size: 0.82rem;">
-                <i class="fa fa-info-circle me-1"/>
-                Entering LBP — amount will be converted at
-                <strong><t t-esc="this.formattedLbpRate"/> LBP/$</strong>
+                 class="lbp-info-bar text-center">
+                <i class="fa fa-exchange me-1"/>
+                Amount for <strong>Cash LBP</strong>:
+                <strong><t t-esc="this.selectedLineLbpAmount"/> LBP</strong>
+                &amp;nbsp;(Rate: <t t-esc="this.formattedLbpRate"/> LBP/$)
             </div>
         </xpath>
     </t>
 
 
     <!-- ============================================================ -->
-    <!-- 6. PaymentScreenStatus — LBP remaining / change             -->
+    <!-- 6. PaymentScreenMethods — Grid layout, all visible, no scroll-->
+    <!-- ============================================================ -->
+    <t t-name="pos_lebanon_custom.PaymentScreenMethods" t-inherit="point_of_sale.PaymentScreenMethods" t-inherit-mode="extension">
+
+        <!-- Replace the flex-column scrollable list with a responsive grid -->
+        <xpath expr="//div[hasclass('paymentmethods')]" position="replace">
+            <div class="paymentmethods lbp-payment-methods-grid">
+                <t t-foreach="payment_methods_from_config" t-as="paymentMethod" t-key="paymentMethod.id">
+                    <div t-if="!(this.pos.cashier._role === 'minimal' and paymentMethod.type === 'pay_later')"
+                         class="lbp-payment-method-btn"
+                         t-on-click="() => this.addNewPaymentLine(paymentMethod)">
+                        <img class="payment-method-icon mb-1" t-att-src="paymentMethodImage(paymentMethod.id)"
+                             style="height: 22px; object-fit: contain;"/>
+                        <span class="payment-name fw-bold"><t t-esc="paymentMethod.name"/></span>
+                        <span class="text-muted" style="font-size:0.75rem;" t-esc="pos.getPaymentMethodFmtAmount(paymentMethod, currentOrder)"/>
+                    </div>
+                </t>
+            </div>
+        </xpath>
+    </t>
+
+
+    <!-- ============================================================ -->
+    <!-- 7. PaymentScreenStatus — LBP remaining / change             -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.PaymentScreenStatus" t-inherit="point_of_sale.PaymentScreenStatus" t-inherit-mode="extension">
 
-        <!-- Append LBP display after the status section -->
         <xpath expr="//div[hasclass('payment-status-amount')]" position="after">
             <div t-if="this.showLbp"
                  class="lbp-amount text-center mt-1"
@@ -125,7 +192,7 @@
 
 
     <!-- ============================================================ -->
-    <!-- 7. OrderReceipt — LBP on each line, total, change, rate      -->
+    <!-- 8. OrderReceipt — LBP on each line, total, change, rate      -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.OrderReceipt" t-inherit="point_of_sale.OrderReceipt" t-inherit-mode="extension">
 
@@ -154,7 +221,7 @@
 
 
     <!-- ============================================================ -->
-    <!-- 8. ReceiptScreen — WhatsApp button + LBP in banner           -->
+    <!-- 9. ReceiptScreen — WhatsApp button + LBP in banner           -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ReceiptScreen" t-inherit="point_of_sale.ReceiptScreen" t-inherit-mode="extension">
 
@@ -187,7 +254,7 @@
 
 
     <!-- ============================================================ -->
-    <!-- 9. ClosePosPopup — LBP on closing register                   -->
+    <!-- 10. ClosePosPopup — LBP on closing register                  -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ClosePosPopup" t-inherit="point_of_sale.ClosePosPopup" t-inherit-mode="extension">
 
@@ -201,7 +268,7 @@
 
 
     <!-- ============================================================ -->
-    <!-- 10. LoginScreen — Username/Password (Odoo native styling)    -->
+    <!-- 11. LoginScreen — Username/Password (Odoo native styling)    -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.LoginScreen" t-inherit="point_of_sale.LoginScreen" t-inherit-mode="extension">
 
@@ -236,7 +303,7 @@
 
 
     <!-- ============================================================ -->
-    <!-- 11. ProductInfoPopup — LBP on price fields                   -->
+    <!-- 12. ProductInfoPopup — LBP on price fields                   -->
     <!-- ============================================================ -->
     <t t-name="pos_lebanon_custom.ProductInfoPopup" t-inherit="point_of_sale.ProductInfoPopup" t-inherit-mode="extension">
 
@@ -257,7 +324,7 @@
 
 
     <!-- ============================================================ -->
-    <!-- 12. ProductConfiguratorPopup — LBP in title + price extras  -->
+    <!-- 13. ProductConfiguratorPopup — LBP in title + price extras  -->
     <!-- Patch via JS: product_configurator_popup_patch.js            -->
     <!-- ============================================================ -->
 

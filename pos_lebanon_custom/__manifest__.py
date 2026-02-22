@@ -13,6 +13,7 @@
         - Username/Password login screen
         - Exchange rate footer bar
         - Backend configuration for LBP/USD rate
+        - Cash (LBP) payment method auto-linked to POS
     """,
     'author': 'Code Troops',
     'depends': ['point_of_sale', 'pos_hr'],
@@ -25,6 +26,7 @@
             'pos_lebanon_custom/static/src/**/*',
         ],
     },
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': False,
     'license': 'LGPL-3',
