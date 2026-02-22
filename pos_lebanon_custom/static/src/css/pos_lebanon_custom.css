@@ -1,116 +1,17 @@
 /* ============================================================
-   POS Lebanon Custom — Master Stylesheet
+   POS Lebanon Custom — Stylesheet
+   Uses Odoo native colors — no custom color overrides
    ============================================================ */
 
-/* ── CSS Variables ── */
-:root {
-    --lbp-accent: #1b6d85;
-    --lbp-accent-light: #2a9fd6;
-    --lbp-muted: #6c757d;
-    --lbp-bg-dark: #1a1a2e;
-    --lbp-bg-card: rgba(255, 255, 255, 0.95);
-    --lbp-sidebar-width: 200px;
-    --lbp-footer-height: 44px;
-}
-
-/* ── 1. Login Screen ── */
-.screen-login {
-    background: linear-gradient(135deg, var(--lbp-bg-dark) 0%, #16213e 50%, #0f3460 100%) !important;
-}
-
-.screen-login .login-form {
-    background: var(--lbp-bg-card);
-    padding: 2.5rem 2rem;
-    border-radius: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(8px);
-}
-
-.screen-login .login-form h3 {
-    color: var(--lbp-accent) !important;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-}
-
-.screen-login .login-form .fa-lock {
-    color: var(--lbp-accent) !important;
-}
-
-.screen-login .login-form input.form-control {
-    border: 2px solid #dee2e6;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.screen-login .login-form input.form-control:focus {
-    border-color: var(--lbp-accent);
-    box-shadow: 0 0 0 0.2rem rgba(27, 109, 133, 0.2);
-}
-
-.screen-login .login-form .btn {
-    background: var(--lbp-accent);
-    color: #fff;
-    border: none;
-    transition: background 0.2s, transform 0.1s;
-}
-
-.screen-login .login-form .btn:hover {
-    background: var(--lbp-accent-light);
-    transform: translateY(-1px);
-}
-
-.screen-login .login-form .btn:active {
-    transform: translateY(0);
-}
-
-/* ── 2. Category Sidebar ── */
-.lbp-right-sidebar {
-    width: var(--lbp-sidebar-width);
-    min-width: var(--lbp-sidebar-width);
-    max-width: var(--lbp-sidebar-width);
-    background: #f8f9fa;
-    border-left: 1px solid #dee2e6;
-    transition: width 0.2s;
-}
-
-.lbp-right-sidebar .lbp-categories-list {
-    scrollbar-width: thin;
-    scrollbar-color: #ccc transparent;
-}
-
-.lbp-right-sidebar .lbp-cat-btn {
-    font-size: 0.85rem;
-    transition: all 0.15s ease;
-    border: 1px solid transparent;
-}
-
-.lbp-right-sidebar .lbp-cat-btn:hover {
-    background: #e9ecef !important;
-    border-color: #dee2e6;
-}
-
-.lbp-right-sidebar .lbp-cat-btn.btn-primary {
-    background: var(--lbp-accent) !important;
-    border-color: var(--lbp-accent) !important;
-    color: #fff !important;
-}
-
-/* ── 3. LBP Amount Styling (Global) ── */
-.lbp-amount,
-.lbp-tax-amount,
-.lbp-total-display,
-.lbp-line-price,
-.lbp-product-price .lbp-lbp-price,
-.lbp-payment-due,
-.lbp-status-amount,
-.lbp-receipt-rate,
-.lbp-payline-amount {
+/* ── 1. LBP Amount Styling (Global) ── */
+.lbp-amount {
     font-variant-numeric: tabular-nums;
-    color: var(--lbp-muted);
+    color: #6c757d;
     font-weight: 500;
     opacity: 0.85;
 }
 
-/* ── 4. Product Cards — Dual-price layout ── */
+/* ── 2. Product Cards — Dual-price layout ── */
 .lbp-product-price {
     text-align: center;
     line-height: 1.2;
@@ -118,86 +19,37 @@
 
 .lbp-product-price .lbp-usd-price {
     font-size: 0.95em;
-    color: #212529;
 }
 
-.lbp-product-price .lbp-lbp-price {
-    font-size: 0.78em;
-}
-
-/* ── 5. Footer Bar ── */
+/* ── 3. Footer Bar ── */
 .lbp-footer-bar {
-    height: var(--lbp-footer-height);
+    height: 44px;
     background: #212529;
     color: #fff;
     font-size: 0.85rem;
     z-index: 10;
 }
 
-.lbp-footer-bar .text-muted {
-    color: #adb5bd !important;
-}
-
 .lbp-footer-bar strong {
     color: #ffc107;
 }
 
-/* ── 6. Payment Screen ── */
-.lbp-payment-due {
-    font-size: 0.9rem !important;
+/* ── 4. Scrollable order area above fixed numpad ── */
+.product-screen .rightpane .order-container {
+    overflow-y: auto !important;
+    flex-shrink: 1;
+    min-height: 0;
 }
 
-.lbp-payline-amount {
-    font-size: 0.75rem;
-    display: block;
-    margin-top: 2px;
+.product-screen .rightpane {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-/* LBP entry mode indicator */
-.lbp-entry-active {
-    background: #ffc10720;
-    border: 2px solid #ffc107;
-    border-radius: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-    color: #856404;
-    font-weight: 600;
-}
-
-/* ── 7. Receipt ── */
-.lbp-receipt-line-amount {
-    font-size: 0.8em;
-    color: #666;
-    font-variant-numeric: tabular-nums;
-}
-
-.lbp-receipt-payment {
-    font-size: 0.85em;
-    color: #666;
-}
-
-.lbp-receipt-rate {
-    font-size: 0.8em;
-    color: #888;
-    border-top: 1px dashed #ccc;
-    margin-top: 4px;
-    padding-top: 4px;
-}
-
-/* ── 8. Product Info Popup ── */
-.lbp-info-price {
-    color: var(--lbp-muted);
-    font-size: 0.85em;
-    font-variant-numeric: tabular-nums;
-}
-
-/* ── 9. Print-specific styles ── */
+/* ── 5. Print-specific styles ── */
 @media print {
-
-    .lbp-amount,
-    .lbp-receipt-line-amount,
-    .lbp-receipt-payment,
-    .lbp-receipt-rate {
+    .lbp-amount {
         color: #333 !important;
         opacity: 1 !important;
     }
