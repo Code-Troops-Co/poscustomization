@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- Cash (LBP) Payment Method -->
-    <record id="pos_payment_method_cash_lbp" model="pos.payment.method">
-        <field name="name">Cash (LBP)</field>
-        <field name="is_cash_count">True</field>
-    </record>
+    <!-- noupdate="1" = create once on install, never modify on upgrade.
+         This prevents the "close open POS sessions" error when upgrading. -->
+    <data noupdate="1">
+        <record id="pos_payment_method_cash_lbp" model="pos.payment.method">
+            <field name="name">Cash (LBP)</field>
+            <field name="is_cash_count">True</field>
+        </record>
+    </data>
 </odoo>
