@@ -3,7 +3,6 @@
 import { PaymentScreen } from "@point_of_sale/app/screens/payment_screen/payment_screen";
 import { PaymentScreenStatus } from "@point_of_sale/app/screens/payment_screen/payment_status/payment_status";
 import { patch } from "@web/core/utils/patch";
-import { useState } from "@odoo/owl";
 
 /**
  * Helper: format an amount as LBP with thousands separators.
@@ -13,22 +12,19 @@ function _toLbp(amount, rate) {
 }
 
 /**
- * Extend PaymentScreen to show LBP equivalents and support
- * "Enter in LBP" mode that converts LBP input to USD.
+ * Extend PaymentScreen to show LBP equivalents.
+ * Auto-converts input when the selected payment line is a "LBP" method.
  */
 patch(PaymentScreen.prototype, {
-    setup() {
-        super.setup(...arguments);
-        this.lbpPayState = useState({
-            enterInLbp: false,
-        });
+
+    get lbpRate() {
+        return this.pos.config.lbp_usd_rate || 89500;
     },
 
     get lbpTotalDue() {
         try {
-            const rate = this.pos.config.lbp_usd_rate || 89500;
             const totalDue = this.currentOrder?.totalDue || 0;
-            return _toLbp(totalDue, rate);
+            return _toLbp(totalDue, this.lbpRate);
         } catch {
             return "0";
         }
@@ -42,60 +38,46 @@ patch(PaymentScreen.prototype, {
         }
     },
 
-    get lbpRate() {
-        const rate = this.pos.config.lbp_usd_rate || 89500;
-        return Math.round(rate).toLocaleString("en-US");
+    get formattedLbpRate() {
+        return Math.round(this.lbpRate).toLocaleString("en-US");
     },
 
     /**
-     * Get LBP equivalent of the total remaining due.
+     * Returns true if the currently selected payment line
+     * is a "Cash LBP" or any LBP-named payment method.
      */
-    get lbpRemainingDue() {
+    get isLbpLineSelected() {
         try {
-            const rate = this.pos.config.lbp_usd_rate || 89500;
-            const remaining = this.currentOrder?.getDue() || 0;
-            return _toLbp(remaining, rate);
+            const selectedLine = this.paymentLines?.find((l) => l.selected);
+            if (!selectedLine) return false;
+            const name = selectedLine.payment_method_id?.name || "";
+            return name.toLowerCase().includes("lbp");
         } catch {
-            return "0";
+            return false;
         }
     },
 
     /**
-     * Format a USD amount as LBP string.
+     * Format a USD amount as LBP string for display.
      */
     formatLbpAmount(usdAmount) {
-        const rate = this.pos.config.lbp_usd_rate || 89500;
-        return _toLbp(usdAmount, rate);
+        return _toLbp(usdAmount, this.lbpRate);
     },
 
     /**
-     * Toggle "Enter in LBP" mode. When active, amounts typed
-     * in the numpad are treated as LBP and converted to USD.
-     */
-    toggleLbpEntry() {
-        this.lbpPayState.enterInLbp = !this.lbpPayState.enterInLbp;
-    },
-
-    /**
-     * Override updateSelectedPaymentline to convert LBP→USD
-     * when Enter in LBP mode is active.
+     * Override updateSelectedPaymentline to auto-convert LBP→USD
+     * when the selected payment line is an LBP method.
+     * No toggle needed — detection is automatic.
      */
     updateSelectedPaymentline(amount = false) {
-        if (this.lbpPayState.enterInLbp && amount) {
-            const rate = this.pos.config.lbp_usd_rate || 89500;
-            // Convert LBP amount to USD
-            const usdAmount = parseFloat(amount) / rate;
-            // Round to 2 decimal places
-            amount = Math.round(usdAmount * 100) / 100;
+        if (this.isLbpLineSelected && amount && amount !== "") {
+            const parsed = parseFloat(String(amount).replace(/,/g, ""));
+            if (!isNaN(parsed) && parsed > 0) {
+                // Convert LBP amount → USD, round to 2 decimals
+                amount = Math.round((parsed / this.lbpRate) * 100) / 100;
+            }
         }
         return super.updateSelectedPaymentline(amount);
-    },
-
-    /**
-     * Check if a payment method is the LBP cash method.
-     */
-    isLbpPaymentMethod(pm) {
-        return pm.name && pm.name.toLowerCase().includes("lbp");
     },
 });
 

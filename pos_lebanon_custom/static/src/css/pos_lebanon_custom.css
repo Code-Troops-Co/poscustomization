@@ -1,56 +1,122 @@
 /* ============================================================
    POS Lebanon Custom — Stylesheet
-   Uses Odoo native colors — no custom color overrides
+   Odoo-native colors. No dark overrides.
    ============================================================ */
 
-/* ── 1. LBP Amount Styling (Global) ── */
+/* ── 1. LBP Amount (global) ── */
 .lbp-amount {
     font-variant-numeric: tabular-nums;
-    color: #6c757d;
+    color: var(--bs-secondary-color, #6c757d);
     font-weight: 500;
-    opacity: 0.85;
 }
 
-/* ── 2. Product Cards — Dual-price layout ── */
+/* ── 2. Product Card dual-price ── */
 .lbp-product-price {
     text-align: center;
     line-height: 1.2;
 }
 
-.lbp-product-price .lbp-usd-price {
-    font-size: 0.95em;
-}
-
-/* ── 3. Footer Bar ── */
+/* ── 3. Footer Bar — light, Odoo-native style ── */
 .lbp-footer-bar {
-    height: 44px;
-    background: #212529;
-    color: #fff;
-    font-size: 0.85rem;
-    z-index: 10;
+    font-size: 0.82rem;
+    background-color: var(--bs-body-bg, #f8f9fa);
+    color: var(--bs-body-color, #212529);
+    border-top: 1px solid var(--bs-border-color, #dee2e6);
+    flex-shrink: 0;
+    z-index: 5;
 }
 
-.lbp-footer-bar strong {
-    color: #ffc107;
+.lbp-footer-bar .lbp-rate-badge {
+    font-weight: 600;
+    color: var(--bs-primary, #0d6efd);
 }
 
-/* ── 4. Scrollable order area above fixed numpad ── */
-.product-screen .rightpane .order-container {
-    overflow-y: auto !important;
-    flex-shrink: 1;
-    min-height: 0;
+.lbp-footer-bar .lbp-total-lbp {
+    font-weight: 700;
+    color: var(--bs-success, #198754);
 }
 
-.product-screen .rightpane {
+/* ── 4. Order Lines Area — scrollable above numpad (Option A) ──
+   Targets Odoo's actual order-scroller wrapper */
+.product-screen .order-container {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    flex: 1;
+    min-height: 0;
 }
 
-/* ── 5. Print-specific styles ── */
+.product-screen .order-scroller {
+    overflow-y: auto !important;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Also target the right pane wrapper */
+.product-screen .rightpane,
+.product-screen .order-pane {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+}
+
+/* ── 5. Payment Screen — contain due amount so lines stay visible ── */
+.payment-screen .paymentlines-container .total {
+    /* Override the inline font-size: 125px on desktop — cap it */
+    font-size: clamp(3rem, 8vw, 5.5rem) !important;
+    line-height: 1.1;
+}
+
+/* LBP sub-amount under the main payment due total */
+.payment-screen .paymentlines-container .total .lbp-amount {
+    font-size: 1rem !important;
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--bs-success, #198754);
+    font-weight: 700;
+}
+
+/* ── 6. Receipt — per-line LBP amount on its own row ── */
+.pos-receipt .lbp-receipt-line {
+    display: block;
+    font-size: 0.78em;
+    color: #666;
+    text-align: right;
+    padding-right: 0;
+    margin-top: -2px;
+}
+
+/* LBP total block on receipt */
+.pos-receipt .lbp-receipt-total {
+    text-align: right;
+    font-size: 0.88em;
+    font-weight: 700;
+    color: #198754;
+    margin-top: 2px;
+}
+
+/* Rate line at bottom of receipt */
+.pos-receipt .lbp-receipt-rate {
+    font-size: 0.75em;
+    color: #888;
+    text-align: center;
+    border-top: 1px dashed #ccc;
+    padding-top: 6px;
+    margin-top: 6px;
+}
+
+/* ── 7. Print ── */
 @media print {
-    .lbp-amount {
+
+    .lbp-amount,
+    .lbp-receipt-line,
+    .lbp-receipt-total {
         color: #333 !important;
-        opacity: 1 !important;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .lbp-footer-bar {
+        display: none !important;
     }
 }
