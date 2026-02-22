@@ -185,8 +185,15 @@
     color: #0c5460;
     border-radius: 6px;
     font-size: 0.82rem;
-    padding: 6px 12px;
+    padding: 8px 12px;
     margin: 6px 0;
+}
+
+/* Large LBP number shown in the info bar as user types */
+.lbp-info-amount {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0c5460;
 }
 
 /* Clamp the giant font Odoo uses for total due */
@@ -202,6 +209,15 @@
     text-align: center;
     margin-top: -6px;
     margin-bottom: 4px;
+}
+
+/* LBP sub-line under each USD payment line amount */
+.lbp-line-amount {
+    font-size: 0.72rem;
+    color: var(--bs-success, #198754);
+    font-weight: 500;
+    line-height: 1.1;
+    margin-top: 1px;
 }
 
 /* ────────────────────────────────────────────────────────────────
